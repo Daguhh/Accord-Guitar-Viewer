@@ -1,0 +1,5 @@
+Run show_guitar_accord.py to display interface
+You can run it only with tkinter dependancies
+but you will need scipy, numpy, matplotlib, skimage and PIL to generate the wooden background 
+
+you can regenerate listedesaccord.py from the json file by running transform_list.py
