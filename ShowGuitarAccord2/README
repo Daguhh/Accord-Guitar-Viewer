@@ -1,5 +1,6 @@
-Run show_guitar_accord.py to display interface
-You can run it only with tkinter dependancies
-but you will need scipy, numpy, matplotlib, skimage and PIL to generate the wooden background 
+Excecutez show_guitar_accord.py pour afficher l'interface
+Le script peut être utilisé avec pour seule dépendance tkinter,
+Si vous souhaitez générer un manche de guitare immitation bois, installer les dépenances suivantes :
+scipy, numpy, matplotlib, skimage et PILLOW.
 
-you can regenerate listedesaccord.py from the json file by running transform_list.py
+Le fichier listedesaccord.py peut être régénéré à partir du fichier json en executant transform_list.py
