@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
+"""
+Display guitar chords from listedesaccords database
+"""
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -15,7 +17,7 @@ try:
     from woodenbackground import get_background # créé image de fond (optionel)
 except : pass
 
-
+################# Interface Principale ##############################
 class MainGui:
 
     def __init__(self, root, pos=[0,0]):
@@ -29,56 +31,44 @@ class MainGui:
 
         # Création de listes déroulantes pour selection de l'accord
         frame2=tk.Frame(mainframe)
-        self.accordage = self.create_accordage_box(frame2)
-        self.accord = self.create_accord_box(frame2)
-        self.variante = self.create_variante_box(frame2)
+        self.accordage = self.combobox(frame = frame2,
+                                       liste = list(CHORDS),
+                                       callback = self.change_accords_liste)
+
+        self.accord = self.combobox(frame = frame2,
+                                    liste = None,
+                                    callback = self.change_variantes_liste)
+
+        self.variante = self.combobox(frame = frame2,
+                                      liste = None,
+                                      callback = self.dessine_tablature)
         frame2.pack(side=tk.LEFT)
 
         mainframe.grid(row=pos[0], column=pos[1])
 
-    def create_accordage_box(self, frame):
-        # paramètres de la combobox
-        accordages = list(CHORDS)
-        callback = self.display_accords
+    # Création des listes déroulantes (excecuté à l'init uniquement)
+    def combobox(self, frame, liste, callback):
+        return DropList(frame=frame, values=liste, callback=callback)
 
-        return DropList(frame=frame, values=accordages, callback=callback)
-
-    def create_accord_box(self, frame):
-        # selections des combobox précédentes
-        accordage = self.accordage.box.get()
-        # paramètres de la combobox
-        accords = list( CHORDS[accordage] )
-        callback = self.display_variantes
-
-        return DropList(frame=frame, values=accords, callback=callback)
-
-    def create_variante_box(self, frame):
-        # selections des combobox précédentes
-        accordage = self.accordage.box.get()
-        accord = self.accord.box.get()
-        # paramètres de la combobox
-        variantes = list( CHORDS[accordage][accord] )
-        callback = self.display_tablature
-
-        return DropList(frame=frame, values=variantes, callback=callback)
-
-    def display_accords(self, event):
-        # selections des combobox précédentes
+    # Modification du contenus des listes
+    def change_accords_liste(self, event):
+        # éléments selectionnés des combobox précédentes
         accordage = self.accordage.box.get()
         # application des nouvelles valeurs
         accords = list( CHORDS[accordage] )
         self.accord.box['values'] = accords
 
-    def display_variantes(self, event):
-        # selections des combobox précédentes
+    def change_variantes_liste(self, event):
+        # éléments selectionnés des combobox précédentes
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
         # application des nouvelles valeurs
         variantes = list( CHORDS[accordage][accord] )
         self.variante.box['values'] = variantes
 
-    def display_tablature(self, event):
-        # selections des combobox précédentes
+    # affichage de la tablature
+    def dessine_tablature(self, event):
+        # éléments selectionnés des combobox précédentes
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
         variante = self.variante.box.current()
@@ -86,7 +76,7 @@ class MainGui:
         accord_choisi = CHORDS[accordage][accord][variante]
         self.guitare.show_accord(accord_choisi)
 
-
+################# Widgets & Canvas #####################################
 class DropList:
 # Créé une liste déroulante afin de selectionner les accords à afficher
 # affiche la liste "values" et excecute "callback" à la selection
@@ -98,7 +88,6 @@ class DropList:
                                 width = 11)
         self.box.bind('<<ComboboxSelected>>', callback)
         self.box['values'] = values
-        self.box.current(0)
         self.box.pack(side=tk.TOP)
 
 
@@ -106,10 +95,9 @@ class Guitare:
 # Créé une grille représentant un manche de guitare et affiche l'accord
 # selectionné
     def __init__(self, frame):
-
+    # Création de l'espace de dessin et initialisation de la géometrie
         self.frame = frame
-        # Création de l'espace de dessin, essaie de créer un dessin de manche
-        # en fond du canvas
+        # Espace de dessin
         self.canvas1 = tk.Canvas(self.frame,
                                  width = guitare_width,
                                  height = guitare_height)
@@ -131,14 +119,13 @@ class Guitare:
 
     def create_guitare_background(self):
     # génère de façon procédurale une image de manche en bois
-        if 1:
-        #try:
+        try:
             self.canvas1.background = get_background((self.frets_taille*2,
                                                       self.cordes_taille*2))
             self.background =\
                 self.canvas1.create_image(0, 0, image=self.canvas1.background)
-        #except:
-        #    print("Impossible de créer l'image, voir fonction get_backgound")
+        except:
+            print("Impossible de créer l'image, voir fonction get_backgound")
 
     def create_guitare(self):
     # création de la grille (frettes + cordes)
@@ -172,14 +159,13 @@ class Guitare:
                                      fill="darkgray")
 
     def show_accord(self, accord_choisi):
+    # dessine l'accord choisi par les combobox
 
         # on redessine le manche si le nombre de cordes à changé
         if len(accord_choisi) != len(self.accord_precedent) :
             self.cordes_nombre = len(accord_choisi)
             self.frets_taille = (self.cordes_nombre - 1) * cordes_espacement\
                                 + 2 * cordes_offset
-            self.guitare
-            print(self.cordes_nombre)
             self.create_guitare()
 
         # On l'affiche à partir de la première frette utilisée
@@ -219,29 +205,29 @@ class Guitare:
                                                      font=("Comics", 16))
 
     def get_accord_norm(self, accord_choisi):
+    # corrige la valeur des notes pour afficher uniquement la zone du manche utilisée
 
         # on trouve la note la plus basse sur le manche qui n'est ni "0" ni "x"
         note_min = 50
         for i, note in enumerate (accord_choisi):
-            if isinstance(note, int):
-                if note >= 1 :
+            if isinstance(note, int): # ni x
+                if note >= 1 : # ni 0
                     if note < note_min :
                         note_min = note
 
-        # Pour chque note (ni 0 ni x) on la remonte de note_min sur le manche
-        print("note min : " + str(note_min))
+        # Pour chaque note (ni 0 ni x) on la remonte de note_min sur le manche
         accord_norm=[0]*len(accord_choisi)
         for i, note in enumerate (accord_choisi):
-            if isinstance(note, str):
+            if isinstance(note, str): # si x
                 accord_norm[i] = note
-            elif note >= 1 :
+            elif note >= 1 : # si normale
                 accord_norm[i] = note - note_min + 1
-            else :
+            else : # si 0
                 accord_norm[i] = note
 
         return accord_norm, note_min-1
 
-
+############### Boucle #################################
 root=tk.Tk()
 for i in range(3):
     for j in range (6):
