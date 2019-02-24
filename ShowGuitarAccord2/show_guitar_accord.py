@@ -20,6 +20,7 @@ except : pass
 ################# Interface Principale ##############################
 class MainGui:
 
+    # Création des widgets et Canvas
     def __init__(self, root, pos=[0,0]):
 
         mainframe = tk.Frame(root, relief="sunken", borderwidth=3)
@@ -31,24 +32,20 @@ class MainGui:
 
         # Création de listes déroulantes pour selection de l'accord
         frame2=tk.Frame(mainframe)
-        self.accordage = self.combobox(frame = frame2,
-                                       liste = list(CHORDS),
-                                       callback = self.change_accords_liste)
+        self.accordage = DropList(frame = frame2,
+                                  liste = list(CHORDS),
+                                  callback = self.change_accords_liste)
 
-        self.accord = self.combobox(frame = frame2,
-                                    liste = None,
-                                    callback = self.change_variantes_liste)
+        self.accord = DropList(frame = frame2,
+                               liste = None,
+                               callback = self.change_variantes_liste)
 
-        self.variante = self.combobox(frame = frame2,
-                                      liste = None,
-                                      callback = self.dessine_tablature)
+        self.variante = DropList(frame = frame2,
+                                 liste = None,
+                                 callback = self.dessine_tablature)
         frame2.pack(side=tk.LEFT)
 
         mainframe.grid(row=pos[0], column=pos[1])
-
-    # Création des listes déroulantes (excecuté à l'init uniquement)
-    def combobox(self, frame, liste, callback):
-        return DropList(frame=frame, values=liste, callback=callback)
 
     # Modification du contenus des listes
     def change_accords_liste(self, event):
@@ -66,7 +63,7 @@ class MainGui:
         variantes = list( CHORDS[accordage][accord] )
         self.variante.box['values'] = variantes
 
-    # affichage de la tablature
+    # Affichage de la tablature
     def dessine_tablature(self, event):
         # éléments selectionnés des combobox précédentes
         accordage = self.accordage.box.get()
@@ -77,9 +74,11 @@ class MainGui:
         self.guitare.show_accord(accord_choisi)
 
 ################# Widgets & Canvas #####################################
+
 class DropList:
 # Créé une liste déroulante afin de selectionner les accords à afficher
 # affiche la liste "values" et excecute "callback" à la selection
+
     def __init__(self, frame, values=None, callback=None):
 
         self.value = tk.StringVar()
@@ -94,8 +93,10 @@ class DropList:
 class Guitare:
 # Créé une grille représentant un manche de guitare et affiche l'accord
 # selectionné
-    def __init__(self, frame):
+
     # Création de l'espace de dessin et initialisation de la géometrie
+    def __init__(self, frame):
+
         self.frame = frame
         # Espace de dessin
         self.canvas1 = tk.Canvas(self.frame,
@@ -117,8 +118,9 @@ class Guitare:
         self.guitare = self.create_guitare()
         self.canvas1.pack(side=tk.TOP)
 
+    # Génération procédurale d'une image de manche en bois
     def create_guitare_background(self):
-    # génère de façon procédurale une image de manche en bois
+
         try:
             self.canvas1.background = get_background((self.frets_taille*2,
                                                       self.cordes_taille*2))
@@ -127,8 +129,9 @@ class Guitare:
         except:
             print("Impossible de créer l'image, voir fonction get_backgound")
 
+    # Création de la grille (frettes + cordes)
     def create_guitare(self):
-    # création de la grille (frettes + cordes)
+
         # Création du fond
         self.canvas1.delete("all")
         self.create_guitare_background()
@@ -141,6 +144,7 @@ class Guitare:
                                      frets_espacement * n_fret,
                                      fill="black",
                                      width=1.5)
+
         # Première frette (plus large)
         self.canvas1.create_line(0,
                                  frets_espacement * 1,
@@ -158,8 +162,8 @@ class Guitare:
                                      width=(7-n_corde)/3,
                                      fill="darkgray")
 
+    # Affichage de l'accord choisi par les combobox
     def show_accord(self, accord_choisi):
-    # dessine l'accord choisi par les combobox
 
         # on redessine le manche si le nombre de cordes à changé
         if len(accord_choisi) != len(self.accord_precedent) :
@@ -204,8 +208,8 @@ class Guitare:
                                                      text=str(position_frette),
                                                      font=("Comics", 16))
 
+    # Correction de la valeur des notes pour afficher uniquement la zone du manche utilisée
     def get_accord_norm(self, accord_choisi):
-    # corrige la valeur des notes pour afficher uniquement la zone du manche utilisée
 
         # on trouve la note la plus basse sur le manche qui n'est ni "0" ni "x"
         note_min = 50
