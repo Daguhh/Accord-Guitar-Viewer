@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 # paramètres gémotriques de la guitare
-cordes_espacement = 20
-cordes_offset = 10
-cordes_nombre = 6
+CORDES_ESPACEMENT = 20
+CORDES_OFFSET = 10
 
-frets_nombre = 5
-frets_espacement = 40
+FRETTES_NOMBRE = 5
+FRETTES_ESPACEMENT = 40
 
 # param de la fenetre affichant la guitare
-guitare_width = 150
-guitare_height = 200
+GUITARE_LARGEUR = 150
+GUITARE_HAUTEUR = 200
+
+# Affiche un manche en bois ou non
+WOOD_BG = True

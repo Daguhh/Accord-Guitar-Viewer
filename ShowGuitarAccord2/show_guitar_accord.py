@@ -3,19 +3,22 @@
 """
 Display guitar chords from listedesaccords database
 """
+# import des blibliothèques python
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from guitare_parameter import cordes_espacement, \
-                              cordes_offset, \
-                              frets_nombre, \
-                              frets_espacement, \
-                              guitare_width, \
-                              guitare_height # param géométiques
-from listedesaccords import CHORDS # dictionnaire des accords
-try:
-    from woodenbackground import get_background # créé image de fond (optionel)
-except : pass
+# import des paramètres géométriques
+from guitare_parameter import CORDES_ESPACEMENT, \
+                              CORDES_OFFSET, \
+                              FRETTES_NOMBRE, \
+                              FRETTES_ESPACEMENT, \
+                              GUITARE_LARGEUR, \
+                              GUITARE_HAUTEUR, \
+                              WOOD_BG
+# import du dictionnaire d'accords
+from listedesaccords import CHORDS 
+# création d'un manche en bois si WOOD_BG = True
+if WOOD_BG : from woodenbackground import get_background # créé image de fond (optionel)
 
 ################# Interface Principale ##############################
 class MainGui:
@@ -24,7 +27,7 @@ class MainGui:
     def __init__(self, root, pos=[0,0]):
 
         mainframe = tk.Frame(root, relief="sunken", borderwidth=3)
-
+        
         # Création d'une grille représentant une guitare
         frame1=tk.Frame(mainframe)
         self.guitare = Guitare(frame1)
@@ -35,11 +38,9 @@ class MainGui:
         self.accordage = DropList(frame = frame2,
                                   liste = list(CHORDS),
                                   callback = self.change_accords_liste)
-
         self.accord = DropList(frame = frame2,
                                liste = None,
                                callback = self.change_variantes_liste)
-
         self.variante = DropList(frame = frame2,
                                  liste = None,
                                  callback = self.dessine_tablature)
@@ -47,30 +48,31 @@ class MainGui:
 
         mainframe.grid(row=pos[0], column=pos[1])
 
-    # Modification du contenus des listes
+    # Modification de la liste des accords
     def change_accords_liste(self, event):
-        # éléments selectionnés des combobox précédentes
-        accordage = self.accordage.box.get()
-        # application des nouvelles valeurs
-        accords = list( CHORDS[accordage] )
-        self.accord.box['values'] = accords
+        
+        accordage = self.accordage.box.get() # accordage selectionné
+        accords = list( CHORDS[accordage] ) # liste des accords pour cet accordage
+        
+        self.accord.box['values'] = accords # on applique au widjet
 
+    # Modification de la liste des variantes de l'accord
     def change_variantes_liste(self, event):
-        # éléments selectionnés des combobox précédentes
+        
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
-        # application des nouvelles valeurs
         variantes = list( CHORDS[accordage][accord] )
+        
         self.variante.box['values'] = variantes
 
-    # Affichage de la tablature
+    # Affichage de l'acoord sur le manche
     def dessine_tablature(self, event):
-        # éléments selectionnés des combobox précédentes
+        
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
         variante = self.variante.box.current()
-        # obtention de l'accord et affichage sur le manche
         accord_choisi = CHORDS[accordage][accord][variante]
+        
         self.guitare.show_accord(accord_choisi)
 
 ################# Widgets & Canvas #####################################
@@ -79,14 +81,14 @@ class DropList:
 # Créé une liste déroulante afin de selectionner les accords à afficher
 # affiche la liste "values" et excecute "callback" à la selection
 
-    def __init__(self, frame, values=None, callback=None):
+    def __init__(self, frame, liste=None, callback=None):
 
         self.value = tk.StringVar()
         self.box = ttk.Combobox(frame,
                                 textvariable=self.value,
                                 width = 11)
         self.box.bind('<<ComboboxSelected>>', callback)
-        self.box['values'] = values
+        self.box['values'] = liste
         self.box.pack(side=tk.TOP)
 
 
@@ -94,142 +96,163 @@ class Guitare:
 # Créé une grille représentant un manche de guitare et affiche l'accord
 # selectionné
 
-    # Création de l'espace de dessin et initialisation de la géometrie
+    # Création de l'espace de dessin
     def __init__(self, frame):
 
         self.frame = frame
         # Espace de dessin
         self.canvas1 = tk.Canvas(self.frame,
-                                 width = guitare_width,
-                                 height = guitare_height)
-
-        # Paramètres du manche de guitare
-        self.cordes_nombre = len(list(CHORDS)[0])
-        self.cordes_taille = (frets_nombre) * frets_espacement
-        self.frets_taille = (self.cordes_nombre - 1) * cordes_espacement \
-                            + 2 * cordes_offset
+                                 width = GUITARE_LARGEUR,
+                                 height = GUITARE_HAUTEUR)
 
         # Listera les objets pour manipulation/suppression
-        self.accord_choisi = None
-        self.accord_precedent = [0]*self.cordes_nombre
-        self.numero_frette = []
+        self.accord_precedent = [0]*6 # par défaut, on crée un manche avec 6 cordes
+        self.numero_frette = [] # indice de la première frette affichée
 
-        # Création du manche de guitare
-        self.guitare = self.create_guitare()
+        # Création du manche de guitare en fonction du nombre de cordes
+        nb_cordes = len(list(CHORDS)[0])
+        self.guitare = self.create_guitare(nb_cordes)
+
         self.canvas1.pack(side=tk.TOP)
 
-    # Génération procédurale d'une image de manche en bois
-    def create_guitare_background(self):
+    # Création du manche (frettes + cordes + background)
+    def create_guitare(self, cordes_nombre):
 
-        try:
-            self.canvas1.background = get_background((self.frets_taille*2,
-                                                      self.cordes_taille*2))
-            self.background =\
-                self.canvas1.create_image(0, 0, image=self.canvas1.background)
-        except:
-            print("Impossible de créer l'image, voir fonction get_backgound")
-
-    # Création de la grille (frettes + cordes)
-    def create_guitare(self):
-
-        # Création du fond
+        # On supprime tout ce qu'on a pu dessiner précédemment
         self.canvas1.delete("all")
-        self.create_guitare_background()
+
+        # Obtention des dimensions du manche
+        self.largeur = (cordes_nombre - 1) * CORDES_ESPACEMENT\
+                        + 2 * CORDES_OFFSET
+        self.longueur = FRETTES_NOMBRE * FRETTES_ESPACEMENT
+
+        # Génération procédurale d'une image de manche en bois
+        if WOOD_BG :
+            self.canvas1.background = get_background((self.largeur*2, self.longueur*2))
+            self.background = self.canvas1.create_image(0, 0, image=self.canvas1.background)
 
         # Création des frettes
-        for n_fret in range(frets_nombre) :
-            self.canvas1.create_line(0,
-                                     frets_espacement * n_fret,
-                                     self.frets_taille,
-                                     frets_espacement * n_fret,
-                                     fill="black",
-                                     width=1.5)
-
-        # Première frette (plus large)
-        self.canvas1.create_line(0,
-                                 frets_espacement * 1,
-                                 self.frets_taille,
-                                 frets_espacement * 1,
-                                 fill = "black",
-                                 width = 5)
+        Frette(self.canvas1, 1, self.largeur, width=5) # 1ère plus large
+        for n in range(FRETTES_NOMBRE) : # puis les autres
+            Frette(self.canvas1, n, self.largeur)
 
         # Création des cordes
-        for n_corde in range(self.cordes_nombre):
-            self.canvas1.create_line(n_corde * cordes_espacement + cordes_offset,
-                                     0,
-                                     n_corde * cordes_espacement + cordes_offset,
-                                     self.cordes_taille,
-                                     width=(7-n_corde)/3,
-                                     fill="darkgray")
+        self.cordes_list=[] # on enregistrera les objects corde
+        for n in range(cordes_nombre):
+            corde = Corde(self.canvas1, n)
+            self.cordes_list.append(corde)
 
-    # Affichage de l'accord choisi par les combobox
+    # Dessine l'accord sur le manche
     def show_accord(self, accord_choisi):
+        
+        # On efface l'accord précédent
+        self.clear_accord()
 
         # on redessine le manche si le nombre de cordes à changé
         if len(accord_choisi) != len(self.accord_precedent) :
-            self.cordes_nombre = len(accord_choisi)
-            self.frets_taille = (self.cordes_nombre - 1) * cordes_espacement\
-                                + 2 * cordes_offset
-            self.create_guitare()
+            self.create_guitare(len(accord_choisi))
 
         # On l'affiche à partir de la première frette utilisée
         accord_norm, position_frette = self.get_accord_norm(accord_choisi)
-        for n_corde in range(len(self.accord_precedent)):
-            note_precedente = self.accord_precedent[n_corde]
-            self.canvas1.delete(note_precedente)
-        self.accord_precedent = [0] * len(accord_choisi)
 
         # On dessine, une à une, les notes de l'accord
-        for n_corde, n_fret in enumerate(accord_norm) :
+        self.accord_precedent = [] # remise à zero
+        for n, note in enumerate(accord_norm) :
+            self.accord_precedent.append(self.cordes_list[n].play(note))
 
-            # Définition des couleurs pour les notes jouées :
-            if n_fret == 0 : color = None # à vide
-            elif n_fret == 'x' : color = 'black'; n_fret = 0 # étouffées
-            else : color = 'snow' # normalement
+        # On affiche le numero de frette
+        self.print_frette_number(position_frette)
 
-            # Calcul de la position de la note
-            x = n_corde * cordes_espacement + cordes_offset
-            y = int(n_fret) * frets_espacement + frets_espacement/2
-            # Création de la note
-            note_nouvelle = self.canvas1.create_oval(x-7,
-                                                     y-7,
-                                                     x+7,
-                                                     y+7,
-                                                     fill=color,
-                                                     width=2)
-
-            # On enregistre les objets (les notes) pour suppression ulterieure
-            self.accord_precedent[n_corde] = note_nouvelle
-
-            # On affiche le numero de frette
-            self.canvas1.delete(self.numero_frette)
-            self.numero_frette = self.canvas1.create_text(self.frets_taille+15,
-                                                     cordes_espacement+20,
-                                                     text=str(position_frette),
-                                                     font=("Comics", 16))
+    # Efface l'accord précédent
+    def clear_accord(self):
+        
+        for n in range(len(self.accord_precedent)):
+            self.canvas1.delete(self.accord_precedent[n])
 
     # Correction de la valeur des notes pour afficher uniquement la zone du manche utilisée
     def get_accord_norm(self, accord_choisi):
 
-        # on trouve la note la plus basse sur le manche qui n'est ni "0" ni "x"
-        note_min = 50
+        note_min = 50 # indice de la note la plus basse sur le manche (ni "0" ni "x")
         for i, note in enumerate (accord_choisi):
             if isinstance(note, int): # ni x
                 if note >= 1 : # ni 0
                     if note < note_min :
                         note_min = note
 
-        # Pour chaque note (ni 0 ni x) on la remonte de note_min sur le manche
-        accord_norm=[0]*len(accord_choisi)
+        accord_norm = [0] * len(accord_choisi) # accord abaissé de note_min
         for i, note in enumerate (accord_choisi):
-            if isinstance(note, str): # si x
+            if isinstance(note, str): # si étouffée ('x')
                 accord_norm[i] = note
             elif note >= 1 : # si normale
                 accord_norm[i] = note - note_min + 1
-            else : # si 0
+            else : # si jouée à vide (0)
                 accord_norm[i] = note
 
         return accord_norm, note_min-1
+
+    # Affiche le numéro de frette
+    def print_frette_number(self, number):
+        
+        self.canvas1.delete(self.numero_frette)
+        self.numero_frette = self.canvas1.create_text(self.largeur+15,
+                                                      CORDES_ESPACEMENT+20,
+                                                      text=str(number),
+                                                      font=("Comics", 16))
+
+class Corde:
+# Permet d'afficher et de jouer une corde
+    def __init__(self, canvas, number):
+
+        self.canvas1 = canvas
+        self.num = number # numéro de la corde
+        self.pos_x = self.num * CORDES_ESPACEMENT + CORDES_OFFSET
+        self.taille = FRETTES_NOMBRE * FRETTES_ESPACEMENT
+
+        self.draw()
+
+    # Dessine une corde
+    def draw(self):
+
+        x = self.pos_x
+        y0 = 0
+        y1 = self.taille
+        width = (7-self.num)/3 # taille des cordes décroissante
+
+        self.canvas1.create_line(x, y0, x, y1, width=width, fill="darkgray")
+
+    # Joue/affiche une note sur cette corde
+    def play(self, note):
+
+        color = self.get_color_from_note(note)
+        if note == 'x' : note = 0 # notes étouffées s'affichent en 0
+        r = 7 # rayon de la note affichée
+        x = self.pos_x
+        y = (note + 1/2) * FRETTES_ESPACEMENT # 1/2 frette plus loin que la frette
+
+        note_nouvelle = self.canvas1.create_oval(x-r, y-r, x+r, y+r,
+                                                 fill = color,
+                                                 width = 2)
+        return note_nouvelle
+
+    # Change la couleur de la note suivant la manière de la jouer
+    def get_color_from_note(self, note) :
+
+        if note == 0 : # à vide
+            return  None
+        elif note == 'x' : # étouffées
+            return 'black'
+        else : # normalement
+            return 'snow'
+
+
+class Frette:
+# Affiche une frette
+    def __init__(self, canvas, n, largeur, width=1.5):
+        x0 = 0
+        y = FRETTES_ESPACEMENT * n
+        x1 = largeur
+        canvas.create_line(x0, y, x1, y, fill = "black", width = width)
+
 
 ############### Boucle #################################
 root=tk.Tk()
@@ -237,3 +260,5 @@ for i in range(3):
     for j in range (6):
         guitare  = MainGui(root, [i,j])
 root.mainloop()
+
+
