@@ -16,7 +16,7 @@ from guitare_parameter import CORDES_ESPACEMENT, \
                               GUITARE_HAUTEUR, \
                               WOOD_BG
 # import du dictionnaire d'accords
-from listedesaccords import CHORDS 
+from listedesaccords import CHORDS
 # création d'un manche en bois si WOOD_BG = True
 if WOOD_BG : from woodenbackground import get_background # créé image de fond (optionel)
 
@@ -27,69 +27,95 @@ class MainGui:
     def __init__(self, root, pos=[0,0]):
 
         mainframe = tk.Frame(root, relief="sunken", borderwidth=3)
-        
+
         # Création d'une grille représentant une guitare
         frame1=tk.Frame(mainframe)
-        self.guitare = Guitare(frame1)
-        frame1.pack(side=tk.TOP)
-
-        # Création de listes déroulantes pour selection de l'accord
-        frame2=tk.Frame(mainframe)
-        self.accordage = DropList(frame = frame2,
-                                  liste = list(CHORDS),
-                                  callback = self.change_accords_liste)
-        self.accord = DropList(frame = frame2,
-                               liste = None,
-                               callback = self.change_variantes_liste)
-        self.variante = DropList(frame = frame2,
-                                 liste = None,
-                                 callback = self.dessine_tablature)
-        frame2.pack(side=tk.LEFT)
+        self.name = TextAccord(frame1)
+        self.guitare = Guitare(frame1, callback=self.on_click)
+        frame1.pack(side=tk.BOTTOM)
 
         mainframe.grid(row=pos[0], column=pos[1])
 
+    def on_click(self, event):
+
+        # Création de listes déroulantes pour selection de l'accord
+        self.popup_frame = tk.Toplevel() # popup window
+        self.accordage = DropList(frame = self.popup_frame,
+                                  text = "accordage",
+                                  liste = list(CHORDS),
+                                  callback = self.change_accords_liste)
+        self.accord = DropList(frame = self.popup_frame,
+                               text = "accord",
+                               callback = self.change_variantes_liste)
+        self.variante = DropList(frame = self.popup_frame,
+                                 text = "variante",
+                                 callback = self.dessine_tablature)
+
     # Modification de la liste des accords
     def change_accords_liste(self, event):
-        
+
         accordage = self.accordage.box.get() # accordage selectionné
         accords = list( CHORDS[accordage] ) # liste des accords pour cet accordage
-        
+
         self.accord.box['values'] = accords # on applique au widjet
 
     # Modification de la liste des variantes de l'accord
     def change_variantes_liste(self, event):
-        
+
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
         variantes = list( CHORDS[accordage][accord] )
-        
+
         self.variante.box['values'] = variantes
 
     # Affichage de l'acoord sur le manche
     def dessine_tablature(self, event):
-        
+
         accordage = self.accordage.box.get()
         accord = self.accord.box.get()
         variante = self.variante.box.current()
         accord_choisi = CHORDS[accordage][accord][variante]
-        
+
+        self.popup_frame.destroy()
+        self.name.display_name(accord)
         self.guitare.show_accord(accord_choisi)
 
+
 ################# Widgets & Canvas #####################################
+
+class TextAccord:
+
+    def __init__(self, frame):
+        self.name = tk.StringVar()
+        self.box_name = tk.Message(frame,
+                                   textvariable=self.name,
+                                   font=("Comics", 12),
+                                   width=80)
+        self.box_name.pack(side=tk.TOP)
+
+    def display_name(self, accord):
+        self.name.set(str(accord))
 
 class DropList:
 # Créé une liste déroulante afin de selectionner les accords à afficher
 # affiche la liste "values" et excecute "callback" à la selection
 
-    def __init__(self, frame, liste=None, callback=None):
+    def __init__(self, frame, text, callback, liste=None):
 
+        subframe = tk.Frame(frame)
         self.value = tk.StringVar()
-        self.box = ttk.Combobox(frame,
+        self.box = ttk.Combobox(subframe,
                                 textvariable=self.value,
                                 width = 11)
         self.box.bind('<<ComboboxSelected>>', callback)
         self.box['values'] = liste
-        self.box.pack(side=tk.TOP)
+        self.box.pack(side=tk.RIGHT)
+
+        self.name = tk.StringVar()
+        self.name = tk.Message(subframe, text=text, font=("Comics", 12), width=100)
+        self.name.pack(side=tk.RIGHT)
+
+        subframe.pack(side=tk.TOP)
 
 
 class Guitare:
@@ -97,14 +123,14 @@ class Guitare:
 # selectionné
 
     # Création de l'espace de dessin
-    def __init__(self, frame):
+    def __init__(self, frame, callback):
 
         self.frame = frame
         # Espace de dessin
         self.canvas1 = tk.Canvas(self.frame,
                                  width = GUITARE_LARGEUR,
                                  height = GUITARE_HAUTEUR)
-
+        self.canvas1.bind("<Button-1>", callback)
         # Listera les objets pour manipulation/suppression
         self.accord_precedent = [0]*6 # par défaut, on crée un manche avec 6 cordes
         self.numero_frette = [] # indice de la première frette affichée
@@ -114,6 +140,8 @@ class Guitare:
         self.guitare = self.create_guitare(nb_cordes)
 
         self.canvas1.pack(side=tk.TOP)
+
+
 
     # Création du manche (frettes + cordes + background)
     def create_guitare(self, cordes_nombre):
@@ -144,7 +172,7 @@ class Guitare:
 
     # Dessine l'accord sur le manche
     def show_accord(self, accord_choisi):
-        
+
         # On efface l'accord précédent
         self.clear_accord()
 
@@ -165,7 +193,7 @@ class Guitare:
 
     # Efface l'accord précédent
     def clear_accord(self):
-        
+
         for n in range(len(self.accord_precedent)):
             self.canvas1.delete(self.accord_precedent[n])
 
@@ -192,7 +220,7 @@ class Guitare:
 
     # Affiche le numéro de frette
     def print_frette_number(self, number):
-        
+
         self.canvas1.delete(self.numero_frette)
         self.numero_frette = self.canvas1.create_text(self.largeur+15,
                                                       CORDES_ESPACEMENT+20,
