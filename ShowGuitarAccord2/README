@@ -13,6 +13,8 @@ Vous pouvez modifier les paramètres de la guitare dans guitare.parameter.py
   
 Le fichier listedesaccord.py peut être régénéré à partir du fichier json en executant transform_list.py
 
+woodenbackground.py génère une image de manche en bois (optionnel)
+
 Pour plus d'info :
 $ python3
 >>> import show_guitar_accord
