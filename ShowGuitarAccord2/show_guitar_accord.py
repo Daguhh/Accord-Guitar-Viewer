@@ -22,23 +22,32 @@ if WOOD_BG : from woodenbackground import get_background # créé image de fond 
 
 ################# Interface Principale ##############################
 class MainGui:
+    """
+    Créé un object de classe Guitare qui à l'interaction crée des listes déroulantes.
+    L'object est placé selon la méthode 'pack()' de tkinter, suivant la position 'pos'
+    Appelle la classe Guitare, un canvas contenant la grille, TextAccord, une boite
+    de texte pour afficher le nom de l'accord selectionné, DropList, des listes pour
+    selectionner l'accord à afficher.
+    Usage :
+        MainGui(fenetre, position = [x,y])
+    """
 
-    # Création des widgets et Canvas
+    # crée un grille interactive représentant une guitare
     def __init__(self, root, pos=[0,0]):
 
         mainframe = tk.Frame(root, relief="sunken", borderwidth=3)
 
         # Création d'une grille représentant une guitare
         frame1=tk.Frame(mainframe)
-        self.name = TextAccord(frame1)
-        self.guitare = Guitare(frame1, callback=self.on_click)
+        self.name = TextAccord(frame1) # pour affichage du nom de l'accord
+        self.guitare = Guitare(frame1, callback=self.on_click) # grille
         frame1.pack(side=tk.BOTTOM)
 
         mainframe.grid(row=pos[0], column=pos[1])
 
+    # A l'interaction, Création de listes déroulantes pour selection de l'accord
     def on_click(self, event):
 
-        # Création de listes déroulantes pour selection de l'accord
         self.popup_frame = tk.Toplevel() # popup window
         self.accordage = DropList(frame = self.popup_frame,
                                   text = "accordage",
@@ -51,7 +60,7 @@ class MainGui:
                                  text = "variante",
                                  callback = self.dessine_tablature)
 
-    # Modification de la liste des accords
+    # Modification de la liste des accords (appellé par DropList)
     def change_accords_liste(self, event):
 
         accordage = self.accordage.box.get() # accordage selectionné
@@ -59,7 +68,7 @@ class MainGui:
 
         self.accord.box['values'] = accords # on applique au widjet
 
-    # Modification de la liste des variantes de l'accord
+    # Modification de la liste des variantes de l'accord (appellé par DropList)
     def change_variantes_liste(self, event):
 
         accordage = self.accordage.box.get()
@@ -68,7 +77,7 @@ class MainGui:
 
         self.variante.box['values'] = variantes
 
-    # Affichage de l'acoord sur le manche
+    # Affichage de l'accord sur le manche et ferme la popup
     def dessine_tablature(self, event):
 
         accordage = self.accordage.box.get()
@@ -76,14 +85,18 @@ class MainGui:
         variante = self.variante.box.current()
         accord_choisi = CHORDS[accordage][accord][variante]
 
-        self.popup_frame.destroy()
-        self.name.display_name(accord)
+        self.popup_frame.destroy() # detruit la popup
+        self.name.display_name(accord) # affiche le nom de l'accord
         self.guitare.show_accord(accord_choisi)
 
 
 ################# Widgets & Canvas #####################################
 
 class TextAccord:
+    """
+    Crée une boite pour l'affichage du nom de l'accord,
+    appellé à la selection de la variante
+    """
 
     def __init__(self, frame):
         self.name = tk.StringVar()
@@ -93,12 +106,17 @@ class TextAccord:
                                    width=80)
         self.box_name.pack(side=tk.TOP)
 
+    # Affiche le nom de l'accord
     def display_name(self, accord):
         self.name.set(str(accord))
 
 class DropList:
-# Créé une liste déroulante afin de selectionner les accords à afficher
-# affiche la liste "values" et excecute "callback" à la selection
+    """
+    Créé une liste déroulante afin de selectionner les accords à afficher
+    affiche la liste "values" et excecute "callback" à la selection
+    Usage :
+        DropList(fenetre, nom_de_la_liste, callback, values)
+    """
 
     def __init__(self, frame, text, callback, liste=None):
 
@@ -119,8 +137,13 @@ class DropList:
 
 
 class Guitare:
-# Créé une grille représentant un manche de guitare et affiche l'accord
-# selectionné
+    """
+    Crée une grille représentant un manche de guitare et affiche l'accord
+    selectionné.
+    Au clique gauche, ouvre un popup permettant de choisir l'accord à afficher
+    Usage :
+        Guitare(fenetre, callback = on_click)
+    """
 
     # Création de l'espace de dessin
     def __init__(self, frame, callback):
@@ -130,7 +153,8 @@ class Guitare:
         self.canvas1 = tk.Canvas(self.frame,
                                  width = GUITARE_LARGEUR,
                                  height = GUITARE_HAUTEUR)
-        self.canvas1.bind("<Button-1>", callback)
+        self.canvas1.bind("<Button-1>", callback) # au clique gauche : callback
+
         # Listera les objets pour manipulation/suppression
         self.accord_precedent = [0]*6 # par défaut, on crée un manche avec 6 cordes
         self.numero_frette = [] # indice de la première frette affichée
@@ -227,8 +251,13 @@ class Guitare:
                                                       text=str(number),
                                                       font=("Comics", 16))
 
-class Corde:
-# Permet d'afficher et de jouer une corde
+class Corde :
+    """
+    Crée une corde et affiche la note envoyée
+    Usage :
+        Corde(fenetre, numero_de_la_corde
+    """
+
     def __init__(self, canvas, number):
 
         self.canvas1 = canvas
@@ -248,7 +277,7 @@ class Corde:
 
         self.canvas1.create_line(x, y0, x, y1, width=width, fill="darkgray")
 
-    # Joue/affiche une note sur cette corde
+    # Joue/affiche une note sur la corde
     def play(self, note):
 
         color = self.get_color_from_note(note)
@@ -262,7 +291,7 @@ class Corde:
                                                  width = 2)
         return note_nouvelle
 
-    # Change la couleur de la note suivant la manière de la jouer
+    # Change la couleur de la note suivant la manière de la jouer (ex : étouffée)
     def get_color_from_note(self, note) :
 
         if note == 0 : # à vide
@@ -274,7 +303,7 @@ class Corde:
 
 
 class Frette:
-# Affiche une frette
+    """  Affiche une frette, pas de méthode particulière"""
     def __init__(self, canvas, n, largeur, width=1.5):
         x0 = 0
         y = FRETTES_ESPACEMENT * n
@@ -283,10 +312,11 @@ class Frette:
 
 
 ############### Boucle #################################
-root=tk.Tk()
-for i in range(3):
-    for j in range (6):
-        guitare  = MainGui(root, [i,j])
-root.mainloop()
+if __name__ == '__main__':
+    root=tk.Tk()
+    for i in range(3):
+        for j in range (6):
+            guitare  = MainGui(root, [i,j])
+    root.mainloop()
 
 
