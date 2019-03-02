@@ -13,4 +13,4 @@ GUITARE_LARGEUR = 150
 GUITARE_HAUTEUR = 200
 
 # Affiche un manche en bois ou non
-WOOD_BG = True
+WOOD_BG = True # False
